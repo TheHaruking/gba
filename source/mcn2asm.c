@@ -9,19 +9,23 @@ struct asmarray {
 };
 
 const char head_tbl[32] = {
+//  0  1  2  3  4  5  6  7
 	5, 5, 5, 6, 4, 4, 4, 4,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1,
+	4, 3, 7, 7, 6, 6, 6, 6,
+	5, 5, 4, 4, 4, 4, 5, 5,
+	4, 4, 3, 3, 2, 1, 3, 3,
 };
 
-void McnToAsm(struct asmarray* asmcode, unsigned short mcncode){
+void sethead(struct asmarray* asmcode, unsigned short mcncode){
 	asmcode->head = head_tbl[mcncode >> 11];
-	
 }
 
-void TestMcnToAsm(){
+void setcode(struct asmarray* asmcode, unsigned short mcncode){
+	asmcode->code
+}
 
+void McnToAsm(struct asmarray* asmcode, unsigned short mcncode){
+	sethead(asmcode, mcncode);	
 }
 
 void PrintMcnAndAsm(unsigned short mcncode, struct asmarray asmcode){
@@ -37,7 +41,7 @@ int main(){
 	unsigned short mcncode;
 	struct asmarray asmcode;
 
-	mcncode = 0x1234;
+	mcncode = 0x5000;
 	asmcode.head = 0;
 	memset(asmcode.code, 0, 7);
 	PrintMcnAndAsm(mcncode, asmcode);
