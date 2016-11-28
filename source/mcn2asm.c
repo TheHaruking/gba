@@ -42,7 +42,7 @@ int main(){
 	unsigned short mcncode;
 	struct asmarray asmcode;
 
-	mcncode = 0x5000;
+	mcncode = 0x5003;
 	asmcode.head = 0;
 	memset(asmcode.code, 0, 7);
 	PrintMcnAndAsm(mcncode, asmcode);
