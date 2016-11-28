@@ -5,9 +5,17 @@
 #include "Input.h"
 #include "Scanner.h"
 #include "gbascanf.h"
+extern "C" { 
+#include "mcn2asm.h" 
+}
 
 void test(){
-
+	uint16_t opcode = 1111;
+	struct asmarray asmcode;
+	McnToAsm(&asmcode, opcode);
+	for(int i = 0; i < asmcode.head; i++){
+		printf("%d ", asmcode.code[i]);
+	} puts("");
 }
 
 int main()
@@ -18,6 +26,7 @@ int main()
 
 	consoleDemoInit();
 	printf("start\n");
+	test();
 
 	while(1)
 	{
