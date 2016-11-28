@@ -22,11 +22,12 @@ void sethead(struct asmarray* asmcode, unsigned short mcncode){
 
 void setcode(struct asmarray* asmcode, unsigned short mcncode){
 	int p = asmcode->head - 1;
-	asmcode->code[p] = mcncode & 0xFF;
+	asmcode->code[p] = mcncode & 0x7;
 }
 
 void McnToAsm(struct asmarray* asmcode, unsigned short mcncode){
 	sethead(asmcode, mcncode);	
+	setcode(asmcode, mcncode);
 }
 
 void PrintMcnAndAsm(unsigned short mcncode, struct asmarray asmcode){
