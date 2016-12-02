@@ -16,13 +16,15 @@ int main(){
 	unsigned short mcncode;
 	struct asmarray asmcode;
 
-	printf("mcncode? : ");
-	scanf("%4hx", &mcncode) ;
-	asmcode.head = 0;
-	memset(asmcode.code, 0, 7);
+	while(1){
+		printf("mcncode? : ");
+		scanf("%4hx", &mcncode) ;
+		asmcode.head = 0;
+		memset(asmcode.code, 0, 7);
 
-	PrintMcnAndAsm(mcncode, asmcode);
-	McnToAsm(&asmcode, mcncode);
-	PrintMcnAndAsm(mcncode, asmcode);
+		PrintMcnAndAsm(mcncode, asmcode);
+		McnToAsm(&asmcode, mcncode);
+		PrintMcnAndAsm(mcncode, asmcode);
+	}
 	return 0;
 }
