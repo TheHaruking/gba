@@ -1,3 +1,5 @@
+#ifndef _GBA_DE_ASM__MCN2ASM_
+#define _GBA_DE_ASM__MCN2ASM_
 
 struct asmarray {
 	unsigned char head;		
@@ -6,7 +8,7 @@ struct asmarray {
 	unsigned short code[7];
 };
 
-typedef uint16_t (*fgetop)(struct asmarray*, unsigned short*);
 
 extern void McnToAsm(struct asmarray*, unsigned short);
 
+#endif 

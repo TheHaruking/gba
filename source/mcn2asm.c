@@ -3,13 +3,21 @@
 #include <string.h>
 #include "mcn2asm.h"
 ///////////////////////////
+typedef uint16_t (*fgetop)(struct asmarray*, unsigned short*);
+inline static uint16_t nop  (struct asmarray*, unsigned short*);
 inline static uint16_t setV1(struct asmarray*, unsigned short*);
+inline static uint16_t setV2(struct asmarray*, unsigned short*);
 inline static uint16_t setV3(struct asmarray*, unsigned short*);
+inline static uint16_t setV4(struct asmarray*, unsigned short*);
+inline static uint16_t setV5(struct asmarray*, unsigned short*);
+inline static uint16_t setV8(struct asmarray*, unsigned short*);
+inline static uint16_t setVb(struct asmarray*, unsigned short*);
+inline static uint16_t setVf(struct asmarray*, unsigned short*);
 
 ///////////////////////////
 // data table 
 ///////////////////////////
-static const char head_tbl[32] = {
+static const char head_tbl_old[32] = {	// unused
 	//  0  1  2  3  4  5  6  7
 		5, 5, 5, 6, 4, 4, 4, 4,
 		4, 3, 7, 7, 6, 6, 6, 6,
@@ -25,7 +33,36 @@ static const char type_tbl[32] = {
 	   15,15,16,23,18, 0,19,19,
 };
 
-static const fgetop func_tbl[8][20] = {
+static const char head_tbl[20] = {
+	1,
+	5, 7, 4, 5, 7, 4, 8, 8, 6, 6,
+	5, 5, 4, 6, 5, 4, 3, 3, 4
+};
+
+static const char *typename_tbl[20] = {
+	"UNDEFINED",
+	"Move shifted register",
+	"Add/subtract",
+	"Move/compare/add /subtract immediate",
+	"ALU operations",
+	"Hi register operations /branch exchange",
+	"PC-relative load",
+	"Load/store with register offset",
+	"Load/store sign-extended byte/halfword",
+	"Load/store with immediate offset",
+	"Load/store halfword",
+	"SP-relative load/store",
+	"Load address",
+	"Add offset to stack pointer",
+	"Push/pop registers",
+	"Multiple load/store",
+	"Conditional branch",
+	"Software Interrupt",
+	"Unconditional branch",
+	"Long branch with link",
+};
+
+static const fgetop func_tbl[20][8] = {
 	{ setVf, nop  , nop  , nop  , nop  , nop  , nop  , nop   },
 	{ setV3, setV3, setV5, setV2, setV3, nop  , nop  , nop   },
 	{ setV3, setV3, setV3, setV1, setV1, setV2, setV3, nop   },
@@ -104,15 +141,16 @@ inline static uint16_t setVf(struct asmarray* asmcode, unsigned short *mcncode){
 }
 
 inline static void sethead(struct asmarray* asmcode, unsigned short mcncode){
-	asmcode->head = head_tbl[mcncode >> 11];
+	asmcode->head = head_tbl[asmcode->type];
 }
 
-//-----
-inline static void setp   (struct asmarray* asmcode, unsigned short mcncode){
-	asmcode->p    = asmcode->head - 1;
+static void settype(struct asmarray* asmcode, unsigned short mcncode){
+	asmcode->type = type_tbl[mcncode >> 11];
 }
 
-//-----
+// 分類しきれなかった一部の命令を、ここで処理する。
+// 未定義命令への振り分けもここ。
+// ... 一部の命令 → 4-5,7-8,13-14,16-17
 static void settyp2(struct asmarray* asmcode, unsigned short mcncode){
 	switch(asmcode->type){
 		case 20:
@@ -138,13 +176,9 @@ static void settyp2(struct asmarray* asmcode, unsigned short mcncode){
 	}
 }
 
-static void settype(struct asmarray* asmcode, unsigned short mcncode){
-	asmcode->type = type_tbl[mcncode >> 11];
-}
-
 static void setcode(struct asmarray* asmcode, unsigned short mcncode){
 	uint16_t mcncode_copy = mcncode;
-	for(int i = 0; i < asmcode->p ; i++){
+	for(int i = 0; i < asmcode->head ; i++){
 		asmcode->code[i] = func_tbl[asmcode->type][i](asmcode, &mcncode_copy);
 	}
 }
@@ -154,10 +188,8 @@ static void setcode(struct asmarray* asmcode, unsigned short mcncode){
 // external function 
 ///////////////////////////
 void McnToAsm(struct asmarray* asmcode, unsigned short mcncode){
-	sethead(asmcode, mcncode);	
-	setp   (asmcode, mcncode);
 	settype(asmcode, mcncode);	
 	settyp2(asmcode, mcncode);
-	printf("yahoo\n");
+	sethead(asmcode, mcncode);
 	setcode(asmcode, mcncode);
 }
