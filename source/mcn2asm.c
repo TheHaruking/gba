@@ -3,8 +3,8 @@
 #include <string.h>
 #include "mcn2asm.h"
 ///////////////////////////
-static uint16_t setV1(struct asmarray*, unsigned short*);
-static uint16_t setV3(struct asmarray*, unsigned short*);
+inline static uint16_t setV1(struct asmarray*, unsigned short*);
+inline static uint16_t setV3(struct asmarray*, unsigned short*);
 
 ///////////////////////////
 // data table 
@@ -26,35 +26,33 @@ static const char type_tbl[32] = {
 };
 
 static const fgetop func_tbl[8][20] = {
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV1, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV1, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV1, setV1, setV1, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
-	{ setV3, setV3, setV3, setV3, setV3, setV3, setV3, setV3 },
+	{ setVf, nop  , nop  , nop  , nop  , nop  , nop  , nop   },
+	{ setV3, setV3, setV5, setV2, setV3, nop  , nop  , nop   },
+	{ setV3, setV3, setV3, setV1, setV1, setV2, setV3, nop   },
+	{ setV8, setV3, setV2, setV3, nop  , nop  , nop  , nop   },
+	{ setV3, setV3, setV4, setV3, setV3, nop  , nop  , nop   },
+	{ setV3, setV3, setV1, setV1, setV2, setV3, setV3, nop   },
+	{ setV8, setV3, setV2, setV3, nop  , nop  , nop  , nop   },
+	{ setV3, setV3, setV3, setV1, setV1, setV1, setV1, setV3 },
+	{ setV3, setV3, setV3, setV1, setV1, setV1, setV1, setV3 },
+	{ setV3, setV3, setV5, setV1, setV1, setV3, nop  , nop   },
+	{ setV3, setV3, setV5, setV1, setV1, setV3, nop  , nop   },
+	{ setV8, setV3, setV1, setV1, setV3, nop  , nop  , nop   },
+	{ setV8, setV3, setV1, setV1, setV3, nop  , nop  , nop   },
+	{ setV8, setV3, setV2, setV3, nop  , nop  , nop  , nop   },
+	{ setV8, setV1, setV2, setV1, setV1, setV3, nop  , nop   },
+	{ setV8, setV3, setV1, setV1, setV3, nop  , nop  , nop   },
+	{ setV8, setV4, setV1, setV3, nop  , nop  , nop  , nop   },
+	{ setV8, setV5, setV3, nop  , nop  , nop  , nop  , nop   },
+	{ setVb, setV2, setV3, nop  , nop  , nop  , nop  , nop   },
+	{ setVb, setV1, setV1, setV3, nop  , nop  , nop  , nop   },
 };
 
 ///////////////////////////
 // static function
 ///////////////////////////
-inline static uint16_t setV0(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0x0;
-	*mcncode >>= 0;
-	return r;
+inline static uint16_t nop  (struct asmarray* asmcode, unsigned short *mcncode){
+	return 0;
 }
 
 inline static uint16_t setV1(struct asmarray* asmcode, unsigned short *mcncode){
@@ -74,7 +72,6 @@ inline static uint16_t setV3(struct asmarray* asmcode, unsigned short *mcncode){
 	*mcncode >>= 3;
 	return r;
 }
-
 
 inline static uint16_t setV4(struct asmarray* asmcode, unsigned short *mcncode){
 	uint16_t r = *mcncode & 0xf;
