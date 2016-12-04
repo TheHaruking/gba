@@ -8,7 +8,6 @@ struct asmarray {
 	unsigned short code[7];
 };
 
-
 extern void McnToAsm(struct asmarray*, unsigned short);
 
 #endif 
