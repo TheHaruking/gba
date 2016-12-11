@@ -3,16 +3,16 @@
 #include <string.h>
 #include "mcn2asm.h"
 ///////////////////////////
-typedef uint16_t (*fgetop)(struct asmarray*, unsigned short*);
-inline static uint16_t nop  (struct asmarray*, unsigned short*);
-inline static uint16_t setV1(struct asmarray*, unsigned short*);
-inline static uint16_t setV2(struct asmarray*, unsigned short*);
-inline static uint16_t setV3(struct asmarray*, unsigned short*);
-inline static uint16_t setV4(struct asmarray*, unsigned short*);
-inline static uint16_t setV5(struct asmarray*, unsigned short*);
-inline static uint16_t setV8(struct asmarray*, unsigned short*);
-inline static uint16_t setVb(struct asmarray*, unsigned short*);
-inline static uint16_t setVf(struct asmarray*, unsigned short*);
+typedef unsigned short (*fgetop)(unsigned short *);
+inline static unsigned short nop  (unsigned short *);
+inline static unsigned short setV1(unsigned short *);
+inline static unsigned short setV2(unsigned short *);
+inline static unsigned short setV3(unsigned short *);
+inline static unsigned short setV4(unsigned short *);
+inline static unsigned short setV5(unsigned short *);
+inline static unsigned short setV8(unsigned short *);
+inline static unsigned short setVb(unsigned short *);
+inline static unsigned short setVf(unsigned short *);
 
 ///////////////////////////
 // data table 
@@ -88,54 +88,54 @@ static const fgetop func_tbl[20][8] = {
 ///////////////////////////
 // static function
 ///////////////////////////
-inline static uint16_t nop  (struct asmarray* asmcode, unsigned short *mcncode){
+inline static unsigned short nop  (unsigned short *mcncode){
 	return 0;
 }
 
-inline static uint16_t setV1(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0x1;
+inline static unsigned short setV1(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0x1;
 	*mcncode >>= 1;
 	return r;
 }
 
-inline static uint16_t setV2(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0x3;
+inline static unsigned short setV2(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0x3;
 	*mcncode >>= 2;
 	return r;
 }
 
-inline static uint16_t setV3(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0x7;
+inline static unsigned short setV3(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0x7;
 	*mcncode >>= 3;
 	return r;
 }
 
-inline static uint16_t setV4(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0xf;
+inline static unsigned short setV4(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0xf;
 	*mcncode >>= 4;
 	return r;
 }
 
-inline static uint16_t setV5(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0x1f;
+inline static unsigned short setV5(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0x1f;
 	*mcncode >>= 5;
 	return r;
 }
 
-inline static uint16_t setV8(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0xff;
+inline static unsigned short setV8(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0xff;
 	*mcncode >>= 8;
 	return r;
 }
 
-inline static uint16_t setVb(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0x7ff;
+inline static unsigned short setVb(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0x7ff;
 	*mcncode >>= 11;
 	return r;
 }
 
-inline static uint16_t setVf(struct asmarray* asmcode, unsigned short *mcncode){
-	uint16_t r = *mcncode & 0xffff;
+inline static unsigned short setVf(unsigned short *mcncode){
+	unsigned short r = *mcncode & 0xffff;
 	*mcncode >>= 15;
 	return r;
 }
@@ -177,9 +177,11 @@ static void settyp2(struct asmarray* asmcode, unsigned short mcncode){
 }
 
 static void setcode(struct asmarray* asmcode, unsigned short mcncode){
-	uint16_t mcncode_copy = mcncode;
-	for(int i = 0; i < asmcode->head ; i++){
-		asmcode->code[i] = func_tbl[asmcode->type][i](asmcode, &mcncode_copy);
+	unsigned short mcncode_copy = mcncode;
+	int i;
+	for(i = 0; i < asmcode->head ; i++){
+		// 関数ポインタテーブルから順次実行
+		asmcode->code[i] = func_tbl[asmcode->type][i](&mcncode_copy);
 	}
 }
 
