@@ -3,6 +3,7 @@
 #include "gba.h"
 #include "mcn2asm.h"
 #include "gbaprint.h"
+#include "gbainput.h"
 #include "res_font_table-320.h"
 #include "chr002.h"
 
@@ -51,6 +52,7 @@ int main()
 
 	vramInit();
 	videoInit(BG0_MAP_ADR);
+	gbainputInit();
 	testgbaprint();
 
 	int n = 0;
