@@ -1,19 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-<<<<<<< HEAD
 #include <gba.h>
 #include <mcn2asm.h>
 #include <gbaprint.h>
 #include <res_font_table-320.h>
 #include <chr003.h>
-=======
-#include "gba.h"
-#include "mcn2asm.h"
-#include "gbaprint.h"
-#include "gbainput.h"
-#include "res_font_table-320.h"
-#include "chr002.h"
->>>>>>> ad0fd94fe3d52c4d112d7c276aa67e0c0ac258bb
 
 // font関連
 #define FONTTILE		chr003Tiles
