@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include <gba.h>
-#include "gbaprint.h"
+#include <gbaprint.h>
+
+const unsigned int asc2val_tbl[0x10] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 
+	0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 
+};
 
 struct window {
 	u16 *p;
@@ -34,10 +39,10 @@ void videoFinish(){
 }
 
 void testprintval(u16 val){
-	*(win->p + win->i++) = (val >> 12 & 0xf) + 0x80;
-	*(win->p + win->i++) = (val >>  8 & 0xf) + 0x80;
-	*(win->p + win->i++) = (val >>  4 & 0xf) + 0x80;
-	*(win->p + win->i++) = (val >>  0 & 0xf) + 0x80;
+	*(win->p + win->i++) = asc2val_tbl[(val >> 12 & 0xf)];
+	*(win->p + win->i++) = asc2val_tbl[(val >>  8 & 0xf)];
+	*(win->p + win->i++) = asc2val_tbl[(val >>  4 & 0xf)];
+	*(win->p + win->i++) = asc2val_tbl[(val >>  0 & 0xf)];
 }
 
 // 桁対応
@@ -45,7 +50,7 @@ void testprintval2(unsigned int val){
 	int tmp = 0;	unsigned int val2 = val;
 	do { tmp++; } while(val2 >>= 4);
 	for(tmp--; tmp >= 0; tmp--)
-		*(win->p + win->i++) = (val >> tmp*4 & 0xf) + 0x80;
+		*(win->p + win->i++) = asc2val_tbl[(val >> tmp*4 & 0xf)];
 }
 
 void refresh(){

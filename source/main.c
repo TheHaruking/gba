@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "gba.h"
-#include "mcn2asm.h"
-#include "gbaprint.h"
-#include "res_font_table-320.h"
-#include "chr002.h"
+#include <gba.h>
+#include <mcn2asm.h>
+#include <gbaprint.h>
+#include <res_font_table-320.h>
+#include <chr003.h>
 
 // font関連
-#define FONTTILE		chr002Tiles
-#define FONTTILEL		chr002TilesLen
-#define FONTPAL			chr002Pal
-#define FONTPALL		chr002PalLen
+#define FONTTILE		chr003Tiles
+#define FONTTILEL		chr003TilesLen
+#define FONTPAL			chr003Pal
+#define FONTPALL		chr003PalLen
 
 // BG関連
 #define ALL_CHR			CHAR_BASE(2)
@@ -61,6 +61,8 @@ int main()
 		n++;
 		move(2,2);
 		testprintval2(n);
+		move(2,3);
+		testprintval2(0x1234);
 		refresh();
 
 		*((u16*)BG0_MAP_ADR + 33) = n & 0xff;
