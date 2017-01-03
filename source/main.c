@@ -3,6 +3,7 @@
 #include <gba.h>
 #include <mcn2asm.h>
 #include <gbaprint.h>
+#include <gbainput.h>
 #include <res_font_table-320.h>
 #include <chr003.h>
 
@@ -63,7 +64,8 @@ int main()
 		move(2,2);
 		testprintval2(n);
 		move(2,3);
-		testprintval2(0x1234);
+		gbaprint(gbainputMain());
+		gbaprint("moji");
 		refresh();
 
 		*((u16*)BG0_MAP_ADR + 33) = n & 0xff;
