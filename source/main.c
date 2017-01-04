@@ -23,10 +23,6 @@
 void zzzzzzzz(){}
 
 // Data
-const u16 syobonkun[7] = {	0x68, 0xAE, 0x60, 0xAD, 0x60, 0xAF, 0x69 };
-
-void testgbaprint(){ CpuFastSet(syobonkun, (u16*)BG0_MAP_ADR, sizeof(syobonkun) / 2 | COPY16); }
-
 void vramInit(){
 	// Init
 	SetMode(MODE_0 | BG0_ENABLE | BG1_ENABLE);
