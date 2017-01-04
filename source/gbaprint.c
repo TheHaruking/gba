@@ -1,12 +1,21 @@
 #include <stdlib.h>
 #include <gba.h>
 #include <gbaprint.h>
+////////////////////////////////
+// 宣言_関数
+////////////////////////////////
+static inline int xyToVram(const int, const int);
+extern void move(int, int);
+extern void videoInit(unsigned short *);
+extern void videoFinish();
+extern void testprintval(unsigned short);
+extern void testprintval2(unsigned int);
+extern void refresh();
+extern void gbaprint(char*);
 
-static const unsigned int asc2val_tbl[0x10] = {
-	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 
-	0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 
-};
-
+////////////////////////////////
+// 宣言_構造体
+////////////////////////////////
 static struct window {
 	u16 *p;
 	u16 i; // VRAM OFFSET
@@ -14,8 +23,22 @@ static struct window {
     u16* vram;
 };
 
+////////////////////////////////
+// 宣言_変数
+////////////////////////////////
 static struct window *win;
 
+////////////////////////////////
+// 定義_データ
+////////////////////////////////
+static const unsigned int asc2val_tbl[0x10] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 
+	0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 
+};
+
+////////////////////////////////
+// 定義_関数
+////////////////////////////////
 //#define XYTOVRAM(x, y)	(x + y * 32)
 static inline int xyToVram(const int x, const int y){
     return x + y * 32;

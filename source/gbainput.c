@@ -3,6 +3,25 @@
 #include "gbainput.h"
 #include <mappy.h>
 
+////////////////////////////////
+// 宣言_関数
+////////////////////////////////
+extern int   gbainputInit();
+extern void  gbainputFinish();
+extern char* gbainputMain();
+static void btnUpdate(void);
+static void keytomem(void);
+static void keytomemAB(void);
+static void mode0(void);
+static void mode1(void);
+static void mode2(void);
+static void mode3(void);
+static void command(void);
+static void debugprint(void);
+
+////////////////////////////////
+// 宣言_構造体
+////////////////////////////////
 struct keys {
 	unsigned int hold_j;
 	unsigned int hold_a, hold_b;
@@ -23,8 +42,14 @@ struct data {
 	struct keys k;
 };
 
+////////////////////////////////
+// 宣言_変数
+////////////////////////////////
 static struct data *d;
 
+////////////////////////////////
+// 定義_データ
+////////////////////////////////
 static const int dpadToDigit_tbl[16] = {
 //	     R   L
 	 0,  3,  7, -1,
@@ -108,6 +133,9 @@ static const char ascii_tbl[2][2][9][6] = { // IX AB J J2
 	},
 };
 
+////////////////////////////////
+// 定義_関数
+////////////////////////////////
 int gbainputInit(){
     d = (struct data *)malloc(sizeof(struct data));
 	if(d == NULL)
@@ -143,15 +171,6 @@ static void keytomemAB(){
 							d->k.rrse_a ;
 	d->k.push_X = (d->AB) ? d->k.push_a :
 							d->k.push_b ;
-}
-
-static void command(){
-	char c = ascii_tbl[d->IX][d->AB][d->J][d->J2];
-	if(c){
-		d->linebuf[d->linebuf_p] = c;
-		d->linebuf_p++;
-		d->linebuf[d->linebuf_p] = 0;
-	}
 }
 
 static void mode0(){
@@ -200,7 +219,16 @@ static void mode3(){
 		d->mode = 0;
 }
 
-void debugprint(){
+static void command(){
+	char c = ascii_tbl[d->IX][d->AB][d->J][d->J2];
+	if(c){
+		d->linebuf[d->linebuf_p] = c;
+		d->linebuf_p++;
+		d->linebuf[d->linebuf_p] = 0;
+	}
+}
+
+static void debugprint(){
 	mappy_dprintf("mode  = %X\n", d->mode);
 	mappy_dprintf("d->J  = %X\n", d->J);
 	mappy_dprintf("d->AB = %X\n", d->AB);	

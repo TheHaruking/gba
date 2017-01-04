@@ -4,14 +4,10 @@
 #include <mcn2asm.h>
 #include <gbaprint.h>
 #include <gbainput.h>
-#include <res_font_table-320.h>
 #include <chr003.h>
 
-// font関連
-#define FONTTILE		chr003Tiles
-#define FONTTILEL		chr003TilesLen
-#define FONTPAL			chr003Pal
-#define FONTPALL		chr003PalLen
+// マクロ
+#define FONT(s)			chr003 ## s
 
 // BG関連
 #define ALL_CHR			CHAR_BASE(2)
@@ -40,8 +36,8 @@ void vramInit(){
 	REG_BG3CNT = (BG_SIZE_1 | BG3_MAP | ALL_CHR);
 	
 	// data -> VRAM
-	CpuFastSet(FONTPAL,	 (u16*)BG_PALETTE,  (FONTPALL /4) | COPY32);
-	CpuFastSet(FONTTILE, (u16*)ALL_CHR_ADR, (FONTTILEL/4) | COPY32);
+	CpuFastSet(FONT(Pal),	(u16*)BG_PALETTE,  (FONT(PalLen)  /4) | COPY32);
+	CpuFastSet(FONT(Tiles),	(u16*)ALL_CHR_ADR, (FONT(TilesLen)/4) | COPY32);
 }
 
 int main()
