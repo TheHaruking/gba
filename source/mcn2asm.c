@@ -13,6 +13,12 @@ inline static unsigned short setV5(unsigned short *);
 inline static unsigned short setV8(unsigned short *);
 inline static unsigned short setVb(unsigned short *);
 inline static unsigned short setVf(unsigned short *);
+static void sethead(struct asmarray*, unsigned short);
+static void settype(struct asmarray*, unsigned short);
+static void settyp2(struct asmarray*, unsigned short);
+static void setcode(struct asmarray*, unsigned short);
+static void setname(struct asmarray*);
+extern void McnToAsm(struct asmarray*, unsigned short);
 
 ///////////////////////////
 // data table 
@@ -39,7 +45,7 @@ static const char head_tbl[20] = {
 	5, 5, 4, 6, 5, 4, 3, 3, 4
 };
 
-static const char *typename_tbl[20] = {
+static const char* typename_tbl[20] = {
 	"UNDEFINED",
 	"Move shifted register",
 	"Add/subtract",
@@ -185,6 +191,10 @@ static void setcode(struct asmarray* asmcode, unsigned short mcncode){
 	}
 }
 
+static void setname(struct asmarray* asmcode){
+	asmcode->name = typename_tbl[asmcode->type];
+}
+
 
 ///////////////////////////
 // external function 
@@ -194,4 +204,5 @@ void McnToAsm(struct asmarray* asmcode, unsigned short mcncode){
 	settyp2(asmcode, mcncode);
 	sethead(asmcode, mcncode);
 	setcode(asmcode, mcncode);
+	setname(asmcode);
 }

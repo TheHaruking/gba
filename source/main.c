@@ -45,19 +45,20 @@ int main()
 	vramInit();
 	videoInit(BG0_MAP_ADR);
 	gbainputInit();
-	testgbaprint();
 
 	int n = 0;
+	struct asmarray asmdata;
+	McnToAsm(&asmdata, 1234);
 
 	while(1)
 	{
-		//scanKeys();
 		n++;
 		move(2,2);
 		testprintval2(n);
 		move(2,3);
 		gbaprint(gbainputMain());
 		gbaprint("moji");
+		gbaprint(asmdata.name);
 		refresh();
 
 		*((u16*)BG0_MAP_ADR + 33) = n & 0xff;

@@ -6,6 +6,7 @@ struct asmarray {
 	unsigned char p;
 	signed   int  type;
 	unsigned short code[7];
+	const char* name;
 };
 
 extern void McnToAsm(struct asmarray*, unsigned short);

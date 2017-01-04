@@ -11,12 +11,12 @@ extern void videoFinish();
 extern void testprintval(unsigned short);
 extern void testprintval2(unsigned int);
 extern void refresh();
-extern void gbaprint(char*);
+extern void gbaprint(const char*);
 
 ////////////////////////////////
 // 宣言_構造体
 ////////////////////////////////
-static struct window {
+struct _window {
 	u16 *p;
 	u16 i; // VRAM OFFSET
 	int x, y;
@@ -26,7 +26,7 @@ static struct window {
 ////////////////////////////////
 // 宣言_変数
 ////////////////////////////////
-static struct window *win;
+static struct _window *win;
 
 ////////////////////////////////
 // 定義_データ
@@ -50,7 +50,7 @@ void move(int x, int y){
 }
 
 void videoInit(u16 *vram){
-    win = (struct window *)malloc(sizeof(struct window));
+    win = (struct _window *)malloc(sizeof(struct _window));
 	win->p = (u16*)malloc(0x1000);
 	win->i = 0;
 	win->x = 0; win->y = 0;
@@ -80,6 +80,6 @@ void refresh(){
 	CpuFastSet(win->p, (u16*)win->vram, (0x100) | COPY16);
 }
 
-void gbaprint(char* str){
-	while(*(win->p + win->i++) = *str++);
+void gbaprint(const char* str){
+	for( ; *str != 0 ; *(win->p + win->i++) = *str++ );
 }
