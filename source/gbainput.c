@@ -2,6 +2,14 @@
 #include <gba.h>
 #include "gbainput.h"
 #include <mappy.h>
+////////////////////////////////
+// memo
+////////////////////////////////
+/*
+170107
+	十字ホールド → Aホールド → 十字向き変えホールド → A離す から
+	十字ホールド → 十字向き変えホールド → Aホールド → A離す に 変更
+*/
 
 ////////////////////////////////
 // 宣言_関数
@@ -11,7 +19,7 @@ extern void  gbainputFinish();
 extern char* gbainputMain();
 static void btnUpdate(void);
 static void keytomem(void);
-static void keytomemAB(void);
+static void UpdateModeKey(void);
 static void mode0(void);
 static void mode1(void);
 static void mode2(void);
@@ -27,7 +35,8 @@ struct keys {
 	unsigned int hold_a, hold_b;
 	unsigned int push_a, push_b;
 	unsigned int rrse_a, rrse_b;
-	unsigned int hold_I, rrse_I, push_X;
+	unsigned int hold_a_and_b, hold_a_orr_b;
+	unsigned int hold_I, hold_X, rrse_I, push_X, hold_Z;
 };
 
 struct data {
@@ -35,7 +44,8 @@ struct data {
     char linebuf[256];
     int linebuf_p;
 	int linebuf_p_old;
-	int mode, J, AB, IX, J2;
+	int mode, J, AB, IX, J2;	// 日本語・記号 切り替えもその内ココへ
+	int X_done;					// クロス打ち後の2重打ち予防
 	int direction;
 	int chr_pointer;
 	int y;
@@ -80,6 +90,30 @@ static const int direction5_tbl[9][9] = {
 	{ 0,  0, -1,  0,  5,  4,  1,  2,  3},
 	{ 0,  3,  0, -1,  0,  5,  4,  1,  2},
 	{ 0,  2,  3,  0, -1,  0,  5,  4,  1},
+};
+
+static const int direction8_tbl1[9][9] = { // どっちに
+	{ 0,  0,  0,  0,  0,  0,  0,  0,  0},
+	{ 0,  1,  2,  3,  4,  5,  6,  7,  8},
+	{ 0,  8,  1,  2,  3,  4,  5,  6,  7},
+	{ 0,  7,  8,  1,  2,  3,  4,  5,  6},
+	{ 0,  6,  7,  8,  1,  2,  3,  4,  5},
+	{ 0,  5,  6,  7,  8,  1,  2,  3,  4},
+	{ 0,  4,  5,  6,  7,  8,  1,  2,  3},
+	{ 0,  3,  4,  5,  6,  7,  8,  1,  2},
+	{ 0,  2,  3,  4,  5,  6,  7,  8,  1},
+};
+
+static const int direction8_tbl2[9][9] = { // しようか
+	{ 0,  0,  0,  0,  0,  0,  0,  0,  0},
+	{ 0,  1,  2,  4,  6,  8,  7,  5,  3},
+	{ 0,  3,  1,  2,  4,  6,  8,  7,  5},
+	{ 0,  5,  3,  1,  2,  4,  6,  8,  7},
+	{ 0,  7,  5,  3,  1,  2,  4,  6,  8},
+	{ 0,  8,  7,  5,  3,  1,  2,  4,  6},
+	{ 0,  6,  8,  7,  5,  3,  1,  2,  4},
+	{ 0,  4,  6,  8,  7,  5,  3,  1,  2},
+	{ 0,  2,  4,  6,  8,  7,  5,  3,  1},
 };
 
 static const char ascii_tbl[2][2][9][6] = { // IX AB J J2
@@ -162,61 +196,87 @@ static void keytomem(){
 	d->k.push_b = d->k1 & 0x02;
 	d->k.rrse_a = d->k2 & 0x01;
 	d->k.rrse_b = d->k2 & 0x02;
+	d->k.hold_a_and_b = (d->k0 & 0x03) == 0x03;
+	d->k.hold_a_orr_b = (d->k0 & 0x03);
 }
 
-static void keytomemAB(){
+static void UpdateModeKey(){
 	d->k.hold_I = (d->AB) ? d->k.hold_b :
 							d->k.hold_a ;
+	d->k.hold_X = (d->AB) ? d->k.hold_a :
+							d->k.hold_b ;
 	d->k.rrse_I = (d->AB) ? d->k.rrse_b :
 							d->k.rrse_a ;
 	d->k.push_X = (d->AB) ? d->k.push_a :
 							d->k.push_b ;
+	d->k.hold_Z = (d->IX) ? d->k.hold_X :
+							d->k.hold_I ;
 }
 
+
 static void mode0(){
-	// 十字キー
 	if(d->k.hold_j) {	
+		d->J = dpadToDigit_tbl[d->k.hold_j];
 		d->mode = 1;
 	}
 }
 
 static void mode1(){
-	// キーチェック
-	if(!(d->k.hold_j)) {
+	UpdateModeKey();
+	// チェック
+	if(!d->k.hold_j) {
 		d->mode = 0;
 		return;
 	}
 
-	if(d->k.hold_a || d->k.hold_b) {
-		d->J = dpadToDigit_tbl[d->k.hold_j];
-		d->AB = (d->k.hold_a) ? 0 :
-								1 ;
+	// チェック2
+	if(d->k.hold_a_and_b){
+		d->mode = 0;
+		return;
+	}
+
+	// AB離していたらクロス押したフラグリセット
+	if(!d->k.hold_a_orr_b){
+		d->X_done = 0;
+	}
+
+	// メイン
+	if(d->k.hold_a_orr_b) {
+		d->AB = (d->k.hold_b) ? 1 :
+								0 ;
 		d->mode = 2;
 		return;
 	}
 }
 
 static void mode2(){
-	// キーチェック
-	keytomemAB();
-	d->J2 = direction5_tbl[d->J][dpadToDigit_tbl[d->k.hold_j]];
+	UpdateModeKey();
+	// チェック
 	if(d->J2 < 0){
 		d->mode = 0;
 		return;
 	}
+	// チェック2 - クロス打ち後2重打ち対策
+	if(d->X_done && d->k.rrse_I){
+		d->mode = 1;
+		return;
+	}
 
 	if(d->k.rrse_I || d->k.push_X){
-		d->IX = (d->k.rrse_I) ? 0 :
-								1 ;
+		d->J2 = direction5_tbl[d->J][dpadToDigit_tbl[d->k.hold_j]];
+		d->IX = (d->k.push_X) ? 1 :
+								0 ;
 		command();
+		d->X_done = d->IX;
 		d->mode = 3;
 	}
 }
 
 static void mode3(){
-	keytomemAB();
-	if(!d->k.hold_I)
-		d->mode = 0;
+	UpdateModeKey();
+	if(!d->k.hold_Z){
+		d->mode = 1;
+	}
 }
 
 static void command(){
