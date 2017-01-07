@@ -1,2 +1,6 @@
 /build/
 *.obj
+*.elf
+厳選漢字.mdp
+*.stackdump
+.DS_Store
