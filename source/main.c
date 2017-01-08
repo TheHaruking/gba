@@ -47,6 +47,7 @@ int main()
 	gbainputInit();
 
 	int n = 0;
+	int select = 0;
 	char c[256] = "";
 	struct asmarray asmdata;
 

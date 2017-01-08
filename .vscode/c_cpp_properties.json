@@ -23,10 +23,9 @@
         {
             "name": "Win32",
             "includePath": [
-                "c:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
                 "c:/devkitPro/libgba/include",
-                "c:/devkitPro/devkitARM/arm-none-eabi/include"
-            ],
+                "c:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C:/devkitPro/devkitARM/arm-none-eabi/include"],
             "browse" : {
                 "limitSymbolsToIncludedHeaders" : true,
                 "databaseFilename" : ""

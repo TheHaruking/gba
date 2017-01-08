@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <gba.h>
-#include <mappy.h>
 #include "gbainput.h"
+#include <mappy.h>
 ////////////////////////////////
 // memo
 ////////////////////////////////
@@ -9,17 +9,12 @@
 170107
 	十字ホールド → Aホールド → 十字向き変えホールド → A離す から
 	十字ホールド → 十字向き変えホールド → Aホールド → A離す に 変更
-170108
-	ファミコン、GBにも応用できるよう 十字キー＋AB のみで できるようにしていたが、
-	LR も 追加。
-	それにともない、クロス打ちからRシフトに変更
 */
 
 ////////////////////////////////
 // define
 ////////////////////////////////
 #define MAX_LINEBUF			256
-#define DEBUG
 
 ////////////////////////////////
 // 宣言_関数
@@ -31,48 +26,28 @@ static void btnUpdate(void);
 static void keytomem(void);
 static void UpdateModeKey(void);
 static void chartobuf(char);
-
 static void mode0(void);
 static void mode1(void);
 static void mode2(void);
+static void mode3(void);
 static void command(void);
-static void mode_stopper(void);
-
 static void mode10(void);
+static void mode11(void);
 static void command1X(void);
-static void mode1X_stopper(void);
-
 static void mode20(void);
 //static void mode21(void);
 //static void command2X(void);
-static void mode2X_stopper(void);
-
-static void mode30(void);
-//static void mode31(void);
-//static void command3X(void);
-static void mode3X_stopper(void);
-
-static void mode40(void);
-//static void mode41(void);
-//static void command4X(void);
-static void mode4X_stopper(void);
-
-static void mode50(void);
-//static void mode51(void);
-//static void command5X(void);
-static void mode5X_stopper(void);
-
 static void debugprint(void);
 
 ////////////////////////////////
 // 宣言_構造体
 ////////////////////////////////
 struct keys {
-	unsigned int hold_j, hold_a, hold_b, hold_l, hold_r;
-	unsigned int push_j, push_a, push_b, push_l, push_r;
-	unsigned int rrse_j, rrse_a, rrse_b, rrse_l, rrse_r;
+	unsigned int hold_j;
+	unsigned int hold_a, hold_b;
+	unsigned int push_a, push_b;
+	unsigned int rrse_a, rrse_b;
 	unsigned int hold_a_and_b, hold_a_orr_b;
-	unsigned int hold_r_and_l, hold_r_orr_l;
 	unsigned int hold_I, hold_X, rrse_I, push_X, hold_Z;
 };
 
@@ -80,7 +55,7 @@ struct data {
     unsigned int k0, k1, k2, k3;
     char linebuf[MAX_LINEBUF];
     int linebuf_p;
-	int mode, J, AB, IX, J2, R_SHIFT;	// 日本語・記号 切り替えもその内ココへ
+	int mode, J, AB, IX, J2;	// 日本語・記号 切り替えもその内ココへ
 	int X_done;					// クロス打ち後の2重打ち予防
 	int direction;
 	int chr_pointer;
@@ -138,49 +113,49 @@ static const int direction8_tbl2[10][10] = { // 対照、↑中央
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
-static const char ascii_tbl[2][2][9][9] = { // R_SHIFT AB J J2
-	{	// シフトなし
-		{	// Aボタン
+static const char ascii_tbl[2][2][9][9] = { // IX AB J J2
+	{	// ストレート(IX = 0)
+		{	// Aボタンストレート打ち
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'!','!','a','b','c','?','?', 0 ,},
-			{ 0 ,'(','(','d','e','f',')',')', 0 ,},
-			{ 0 , 39, 39,'g','h','i',',',',', 0 ,}, // ''
-			{ 0 , 34, 34,'j','k','l','.','.', 0 ,},	// "" 
+			{ 0 , 0 ,'!','a','b','c','?', 0 , 0 ,},
+			{ 0 , 0 ,'(','d','e','f',')', 0 , 0 ,},
+			{ 0 ,'#', 39,'g','h','i',',', 0 , 0 ,}, // ''
+			{ 0 , 0 , 34,'j','k','l','.', 0 , 0 ,},	// "" 
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 		},
-		{	// Bボタン	
+		{	// Bボタンストレート打ち	
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'m','m','n','o','p','q','q', 0 ,},
-			{ 0 ,'<','<','r','s','t','>','>', 0 ,},
-			{ 0 ,'+','+','u','v','w','-','-', 0 ,},
-			{ 0 , 92, 92,'x','y','z','/','/', 0 ,}, // '\''
+			{ 0 , 0 ,'m','n','o','p','q', 0 , 0 ,},
+			{ 0 , 0 ,'<','r','s','t','>', 0 , 0 ,},
+			{ 0 ,'%','+','u','v','w','-', 0 , 0 ,},
+			{ 0 , 0 , 92,'x','y','z','/', 0 , 0 ,}, // '\''
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 		},
 	},
-	{	// シフトあり
-		{	// Aボタン
+	{	// クロス(IX = 1)
+		{	// Aボタンクロス打ち
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'@','@','A','B','C','`','`', 0 ,},
-			{ 0 ,'{','{','D','E','F','}','}', 0 ,},
-			{ 0 ,'^','^','G','H','I',';',';', 0 ,},
-			{ 0 ,'~','~','J','K','L',':',':', 0 ,},
+			{ 0 , 0 ,'@','A','B','C','`', 0 , 0 ,},
+			{ 0 , 0 ,'{','D','E','F','}', 0 , 0 ,},
+			{ 0 ,'$','^','G','H','I',';', 0 , 0 ,},
+			{ 0 , 0 ,'~','J','K','L',':', 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 		},
-		{	// Bボタン
+		{	// Bボタンクロス打ち
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'M','M','N','O','P','Q','Q', 0 ,},
-			{ 0 ,'[','[','R','S','T',']',']', 0 ,},
-			{ 0 ,'*','*','U','V','W','=','=', 0 ,},
-			{ 0 ,'|','|','X','Y','Z','_','_', 0 ,},	// '\'
+			{ 0 , 0 ,'M','N','O','P','Q', 0 , 0 ,},
+			{ 0 , 0 ,'[','R','S','T',']', 0 , 0 ,},
+			{ 0 ,'&','*','U','V','W','=',' ', 0 ,},
+			{ 0 , 0 ,'|','X','Y','Z','_', 0 , 0 ,},	// '\'
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
@@ -218,8 +193,6 @@ static void btnUpdate(){
 
 static void keytomem(){
 	d->k.hold_j = (d->k0 & 0xf0) >> 4;
-	d->k.push_j = (d->k1 & 0xf0) >> 4;
-	d->k.rrse_j = (d->k2 & 0xf0) >> 4;
 	d->k.hold_a = d->k0 & 0x01;
 	d->k.hold_b = d->k0 & 0x02;
 	d->k.push_a = d->k1 & 0x01;
@@ -228,15 +201,6 @@ static void keytomem(){
 	d->k.rrse_b = d->k2 & 0x02;
 	d->k.hold_a_and_b = (d->k0 & 0x03) == 0x03;
 	d->k.hold_a_orr_b = (d->k0 & 0x03);
-	// LR追加
-	d->k.hold_r = d->k0 & 0x0100;
-	d->k.hold_l = d->k0 & 0x0200;
-	d->k.push_r = d->k1 & 0x0100;
-	d->k.push_l = d->k1 & 0x0200;
-	d->k.rrse_r = d->k2 & 0x0100;
-	d->k.rrse_l = d->k2 & 0x0200;
-	d->k.hold_r_and_l = (d->k0 & 0x0300) == 0x0300;
-	d->k.hold_r_orr_l = (d->k0 & 0x0300);
 }
 
 static void UpdateModeKey(){
@@ -271,20 +235,18 @@ static void mode0(){
 	d->J = dpadToDigit_tbl2[d->k.hold_j];
 
 	if(d->k.hold_j) {	
-		d->mode = 1; return;
+		d->mode = 1;
+		return;
 	}
 
-	switch(d->k.hold_r_orr_l){
-		case 0x100: d->mode = 0x30; return;
-		case 0x200: d->mode = 0x40; return;
-		case 0x300: d->mode = 0x50; return;
-		default: break;
+	if(d->k.hold_a){
+		d->mode = 0x10;
+		return;
 	}
 
-	switch(d->k.hold_a_orr_b){
-		case 0x1: d->mode = 0x10; return;
-		case 0x2: d->mode = 0x20; return;
-		default: break;
+	if(d->k.hold_b){
+		d->mode = 0x20;
+		return;
 	}
 }
 
@@ -324,30 +286,28 @@ static void mode2(){
 	}
 	// チェック2 - クロス打ち後2重打ち対策
 	if(d->X_done && d->k.rrse_I){
-		 d->mode = 1; 
-		 return; 
+		d->mode = 1;
+		return;
 	}
 	// メイン
-	if(d->k.push_a || d->k.push_b){ // if(d->k.rrse_I || d->k.push_X){ // <- クロス打ちの場合
+	if(d->k.rrse_I || d->k.push_X){
 		d->J2 = direction8_tbl2[d->J][dpadToDigit_tbl[d->k.hold_j]];
 		d->IX = (d->k.push_X) ? 1 :
 								0 ;
-		d->R_SHIFT = (d->k.hold_r) ? 1 :
-									 0 ;
 		command();
 		d->X_done = d->IX;
-		d->mode = 15;
+		d->mode = 3;
 	}
 }
 
 static void command(){ // 文字挿入！
-	char c = ascii_tbl[d->R_SHIFT][d->AB][d->J][d->J2];
+	char c = ascii_tbl[d->IX][d->AB][d->J][d->J2];
 	if(c){
 		chartobuf(c);
 	}
 }
 
-static void mode_stopper(){ // ストッパー
+static void mode3(){ // ストッパー
 	UpdateModeKey();
 	// メイン
 	if(!d->k.hold_Z){
@@ -356,7 +316,7 @@ static void mode_stopper(){ // ストッパー
 }
 
 //------------------------------
-// A ボタン ホールド	// 改行 スペース 削除
+// A ボタン ホールド
 //------------------------------
 static void mode10(){
 	// チェック
@@ -367,7 +327,7 @@ static void mode10(){
 
 	if(d->k1 & 0xB0){
 		command1X();
-		d->mode = 0x1f;
+		d->mode = 0x11;
 	}
 }
 
@@ -386,9 +346,11 @@ static void command1X(){
 	if(d->k1 & 0x80){ // ↓
 		chartobuf('\n');
 	}
+
 }
 
-static void mode1X_stopper(){
+// ストッパー
+static void mode11(){
 	if(!(d->k0 & 0x30)){
 		d->mode = 0x10;
 	}	
@@ -409,94 +371,11 @@ static void mode20(){
 static void mode21(){
 
 }
+
 static void command2X(){
 
 }
 *********************/
-
-static void mode2X_stopper(){
-	if(1){
-		d->mode = 0x20;
-	}
-}
-
-//------------------------------
-// R ボタン ホールド // 未使用
-//------------------------------
-static void mode30(){
-	// チェック
-	if(!d->k.hold_r){
-		d->mode = 0;
-		return;
-	}
-}
-/******************
-static void mode21(){
-
-}
-static void command3X(){
-
-}
-*********************/
-
-static void mode3X_stopper(){
-	if(1){
-		d->mode = 0x30;
-	}
-}
-
-//------------------------------
-// L ボタン ホールド // 未使用
-//------------------------------
-static void mode40(){
-	// チェック
-	if(!d->k.hold_l){
-		d->mode = 0;
-		return;
-	}
-}
-/******************
-static void mode41(){
-
-}
-
-static void command4X(){
-
-}
-*********************/
-
-static void mode4X_stopper(){
-	if(1){
-		d->mode = 0x40;
-	}
-}
-
-//------------------------------
-// L&R ボタン ホールド // 未使用
-//------------------------------
-static void mode50(){
-	// チェック
-	if(!d->k.hold_r_and_l){
-		d->mode = 0;
-		return;
-	}
-}
-/******************
-static void mode51(){
-
-}
-
-static void command5X(){
-
-}
-*********************/
-
-static void mode5X_stopper(){
-	if(1){
-		d->mode = 0x50;
-	}
-}
-
 //------------------------------
 // メイン関数
 //------------------------------
@@ -513,30 +392,17 @@ char* gbainputMain(char* c){
 	btnUpdate();
 	keytomem();
 
-	// ホーム
 	if(d->mode == 0) mode0();
-
 	// 十字
 	if(d->mode == 1) mode1();
-		if(d->mode == 2) mode2();
-			if(d->mode == 15) mode_stopper();
+	if(d->mode == 2) mode2();
+	if(d->mode == 3) mode3();
 	// AB
 	if(d->mode == 0x10) mode10();
-		if(d->mode == 0x1f) mode1X_stopper();
+	if(d->mode == 0x11) mode11();
 	if(d->mode == 0x20) mode20();
-		if(d->mode == 0x2f) mode2X_stopper();
 	
-	// LR
-	if(d->mode == 0x30) mode30();
-		if(d->mode == 0x3f) mode3X_stopper();
-	if(d->mode == 0x40) mode40();
-		if(d->mode == 0x4f) mode4X_stopper();
-	if(d->mode == 0x50) mode50();
-		if(d->mode == 0x5f) mode5X_stopper();
-	
-	#ifdef    DEBUG
 	debugprint();
-	#endif // DEBUG
 
 	DMA3COPY((u16*)d->linebuf, (u16*)c , (MAX_LINEBUF >> 1) | COPY16);
 	return d->linebuf;
