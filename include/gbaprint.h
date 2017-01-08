@@ -5,7 +5,8 @@ extern void move(int, int);
 extern void videoInit(unsigned short*);
 extern void videoFinish();
 extern void testprintval(unsigned short);
-extern void testprintval2(unsigned int);
+extern void gbaprintval(unsigned int);
+extern void gbaprintraw(unsigned short);
 extern void gbaprint(const char*);
 extern void refresh();
 

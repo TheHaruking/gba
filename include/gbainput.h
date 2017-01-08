@@ -3,7 +3,7 @@
 
 extern int   gbainputInit();
 extern void  gbainputFinish();
-extern char* gbainputMain();
+extern char* gbainputMain(char*);
 
 
 #endif

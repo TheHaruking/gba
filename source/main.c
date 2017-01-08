@@ -47,22 +47,28 @@ int main()
 	gbainputInit();
 
 	int n = 0;
+	char c[256] = "";
 	struct asmarray asmdata;
-	McnToAsm(&asmdata, 1234);
 
 	while(1)
 	{
 		n++;
-		move(2,2);
-		testprintval2(n);
-		move(2,3);
-		gbaprint(gbainputMain());
-		gbaprint("moji");
+		gbainputMain(c);
+		McnToAsm(&asmdata, n);
+		
+		move(0,0);
+		gbaprintraw(n);
+		move(0,1);
+		gbaprint("moji\n");
+		move(0,2);
+		gbaprintval(n);
+		move(0,3);
 		gbaprint(asmdata.name);
-		refresh();
-
-		*((u16*)BG0_MAP_ADR + 33) = n & 0xff;
+		move(0,4);
+		gbaprint(c);
+		
 		VBlankIntrWait();
+		refresh();
 	}
 	
 	videoFinish();
