@@ -7,12 +7,6 @@
 #include <chr003.h>
 
 #include <Console.h>
-#include <MemoryViewer.h>
-////////////////////////////////
-// 宣言_関数
-////////////////////////////////
-static void vramInit();
-static void go(int (*)(void));
 
 ////////////////////////////////
 // define
@@ -30,27 +24,31 @@ static void go(int (*)(void));
 #define BG2_MAP_ADR		MAP_BASE_ADR(8)
 #define BG3_MAP			MAP_BASE(12)	// 0x3000
 #define BG3_MAP_ADR		MAP_BASE_ADR(12)
-void VisualStudioCode_syntaxHighlightBug_of_AfterMacro1(){}
+void VisualStudioCode_syntaxHighlightBug_of_AfterMacro2(){}
 
 ////////////////////////////////
 // 宣言_構造体
 ////////////////////////////////
 struct DATA {
-	unsigned int k[3];
+    unsigned int k[3];
 	int n;
 	int mode;
 	char c[256];
 	struct asmarray asmdata;
+    char str[1024];
 };
 
 ////////////////////////////////
 // 宣言_変数
 ////////////////////////////////
-struct DATA* d;
+static struct DATA* d;
 
 ////////////////////////////////
 // 定義_データ
 ////////////////////////////////
+
+
+
 
 ////////////////////////////////
 // メイン
@@ -67,23 +65,12 @@ static void vramInit(){
 	CpuFastSet(FONT(Tiles),	(u16*)ALL_CHR_ADR, (FONT(TilesLen)/4) | COPY32);
 }
 
-static void go(int (*func)(void)){
-	videoFinish();
-	(*func)();
-	vramInit();
-	videoInit(BG0_MAP_ADR);
-}
-
-int main()
+int main_Console()
 {
-	// 初期化
-	irqInit();
-	irqEnable(IRQ_VBLANK);
-	REG_IME = 1;
-
-	vramInit();
-	videoInit(BG0_MAP_ADR);
-
+    vramInit();
+    videoInit(BG0_MAP_ADR);
+    gbainputInit();
+    
 	d = (struct DATA*)malloc(sizeof(struct DATA));
 	d->n = 0;
 	d->mode = 1;
@@ -92,33 +79,37 @@ int main()
 	while(d->mode)
 	{
 		scanKeys();
-		d->k[0] = keysHeld();
+        d->k[0] = keysHeld();
         d->k[1] = keysDown();
         d->k[2] = keysUp();
-        switch(d->k[1]){
-			case 0x01:
-				go(main_Console);
-				break;
-			case 0x02:
-				go(main_MemoryViewer);
-				break;
-			default:
-				break;
+        if(d->k[1] & 0x4){
+            d->mode = 0;
         }
-
+		
+		d->n += 0x0020;
+		if(d->n > 0xFFFF) d->n &= 0xFFFF;
+		gbainputMain(d->c);
+		McnToAsm(&(d->asmdata), d->n);
+		
 		move(0,0);
-		gbaprint("[main.c]\n");
+		gbaprintraw(d->n);
 		move(0,1);
-		gbaprintval((unsigned int)d);
+		gbaprint("[console.c]\n");
 		move(0,2);
-		gbaprintval(keysHeld());
+		gbaprintval(d->n);
+		move(0,3);
+		gbaprint(d->asmdata.name);
+		move(0,4);
+		gbaprint(d->c);
+        move(0,5);
+        gbaprintval((unsigned int)d);
 		
 		VBlankIntrWait();
 		refresh();
 	}
-	
-	free(d);
-	videoFinish();
-	SoftReset(RAM_RESTART);
-	return 0;
+
+    videoFinish();
+    gbainputFinish();
+    free(d);
+    return 0;
 }

@@ -8,7 +8,7 @@
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/usr/include"
                 ],
             "browse" : {
-                "limitSymbolsToIncludedHeaders" : true,
+                "limitSymbolsToIncludedHeaders" : false,
                 "databaseFilename" : ""
             }
         },
@@ -16,7 +16,7 @@
             "name": "Linux",
             "includePath": ["/usr/include"],
             "browse" : {
-                "limitSymbolsToIncludedHeaders" : true,
+                "limitSymbolsToIncludedHeaders" : false,
                 "databaseFilename" : ""
             }
         },
@@ -27,7 +27,7 @@
                 "c:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
                 "C:/devkitPro/devkitARM/arm-none-eabi/include"],
             "browse" : {
-                "limitSymbolsToIncludedHeaders" : true,
+                "limitSymbolsToIncludedHeaders" : false,
                 "databaseFilename" : ""
             }
         }
