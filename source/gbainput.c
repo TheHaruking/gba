@@ -24,13 +24,18 @@
 ////////////////////////////////
 // 宣言_関数
 ////////////////////////////////
-extern int   gbainputInit();
-extern void  gbainputFinish();
+extern int   gbainputInit(void);
+extern void  gbainputFinish(void);
 extern char* gbainputMain(char*);
+extern int	 gbainputIsEnter(void);
+extern int	 gbainputIsChanged(void);
+
 static void btnUpdate(void);
 static void keytomem(void);
 static void UpdateModeKey(void);
+static void initStatus(void);
 static void chartobuf(char);
+inline static int isTokeiMawari(void);
 
 static void mode0(void);
 static void mode1(void);
@@ -62,13 +67,18 @@ static void mode50(void);
 //static void command5X(void);
 static void mode5X_stopper(void);
 
+static void mode60(void);
+//static void mode61(void);
+//static void command6X(void);
+static void mode6X_stopper(void);
+
 static void debugprint(void);
 
 ////////////////////////////////
 // 宣言_構造体
 ////////////////////////////////
 struct keys {
-	unsigned int hold_j, hold_a, hold_b, hold_l, hold_r;
+	unsigned int hold_j, hold_a, hold_b, hold_l, hold_r, hold_start;
 	unsigned int push_j, push_a, push_b, push_l, push_r;
 	unsigned int rrse_j, rrse_a, rrse_b, rrse_l, rrse_r;
 	unsigned int hold_a_and_b, hold_a_orr_b;
@@ -78,14 +88,17 @@ struct keys {
 
 struct data {
     unsigned int k0, k1, k2, k3;
-    char linebuf[MAX_LINEBUF];
-    int linebuf_p;
-	int mode, J, AB, IX, J2, R_SHIFT;	// 日本語・記号 切り替えもその内ココへ
-	int X_done;					// クロス打ち後の2重打ち予防
-	int direction;
-	int chr_pointer;
-	int y;
-	struct keys k;
+    char	linebuf[MAX_LINEBUF];
+    int		linebuf_p;
+	int		mode, J, AB, IX, J2, R_SHIFT;	// 日本語・記号 切り替えもその内ココへ
+	int		X_done;					// クロス打ち後の2重打ち予防
+	int		direction;
+	int		chr_pointer;
+	int		y;
+	struct	keys k;
+	int		is_change;
+	int		is_enter;
+	int		select;
 };
 
 ////////////////////////////////
@@ -96,6 +109,13 @@ static struct data *d;
 ////////////////////////////////
 // 定義_データ
 ////////////////////////////////
+enum {
+	SELECT_ALPH,	SELECT_SYMBOL,
+	SELECT_HIRA,	SELECT_KANA,
+	SELECT_KANJI,	SELECT_SPECIAL,
+	SELECT_EMOJI,	SELECT_EMOJI2
+};
+
 static const int dpadToDigit_tbl[16] = { // 右回り, ↑開始
 //	     R   L
 	 0,  3,  7,  9,
@@ -138,14 +158,15 @@ static const int direction8_tbl2[10][10] = { // 対照、↑中央
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
-static const char ascii_tbl[2][2][9][9] = { // R_SHIFT AB J J2
+static const char ascii_tbl[2][2][2][9][9] = { // R_SHIFT AB J J2
+{	// SELECT_ALPH
 	{	// シフトなし
 		{	// Aボタン
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'!','!','a','b','c','?','?', 0 ,},
-			{ 0 ,'(','(','d','e','f',')',')', 0 ,},
-			{ 0 , 39, 39,'g','h','i',',',',', 0 ,}, // ''
-			{ 0 , 34, 34,'j','k','l','.','.', 0 ,},	// "" 
+			{ 0 ,'!','!','b','a','c','?','?', 0 ,},
+			{ 0 ,'(','(','e','d','f',')',')', 0 ,},
+			{ 0 , 39, 39,'h','g','i',',',',', 0 ,}, // ''
+			{ 0 , 34, 34,'k','j','l','.','.', 0 ,},	// "" 
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
@@ -153,10 +174,10 @@ static const char ascii_tbl[2][2][9][9] = { // R_SHIFT AB J J2
 		},
 		{	// Bボタン	
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'m','m','n','o','p','q','q', 0 ,},
-			{ 0 ,'<','<','r','s','t','>','>', 0 ,},
-			{ 0 ,'+','+','u','v','w','-','-', 0 ,},
-			{ 0 , 92, 92,'x','y','z','/','/', 0 ,}, // '\''
+			{ 0 ,'p','p','n','m','o','q','q', 0 ,},
+			{ 0 ,'<','<','s','r','t','>','>', 0 ,},
+			{ 0 ,'+','+','v','u','w','-','-', 0 ,},
+			{ 0 , 92, 92,'y','x','z','/','/', 0 ,}, // '\''
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
@@ -166,10 +187,10 @@ static const char ascii_tbl[2][2][9][9] = { // R_SHIFT AB J J2
 	{	// シフトあり
 		{	// Aボタン
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'@','@','A','B','C','`','`', 0 ,},
-			{ 0 ,'{','{','D','E','F','}','}', 0 ,},
-			{ 0 ,'^','^','G','H','I',';',';', 0 ,},
-			{ 0 ,'~','~','J','K','L',':',':', 0 ,},
+			{ 0 ,'@','@','B','A','C','`','`', 0 ,},
+			{ 0 ,'{','{','E','D','F','}','}', 0 ,},
+			{ 0 ,'^','^','H','G','I',';',';', 0 ,},
+			{ 0 ,'~','~','K','J','L',':',':', 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
@@ -177,16 +198,68 @@ static const char ascii_tbl[2][2][9][9] = { // R_SHIFT AB J J2
 		},
 		{	// Bボタン
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
-			{ 0 ,'M','M','N','O','P','Q','Q', 0 ,},
-			{ 0 ,'[','[','R','S','T',']',']', 0 ,},
-			{ 0 ,'*','*','U','V','W','=','=', 0 ,},
-			{ 0 ,'|','|','X','Y','Z','_','_', 0 ,},	// '\'
+			{ 0 ,'P','P','N','M','O','Q','Q', 0 ,},
+			{ 0 ,'[','[','S','R','T',']',']', 0 ,},
+			{ 0 ,'*','*','V','U','W','=','=', 0 ,},
+			{ 0 ,'|','|','Y','X','Z','_','_', 0 ,},	// '\'
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
 		},
 	},
+},
+{	// SELECT_SYMBOL
+	{	// シフトなし
+		{	// Aボタン
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 ,'!','!','1','0','1','?','?', 0 ,},
+			{ 0 ,'(','(','3','2','3',')',')', 0 ,},
+			{ 0 , 39, 39,'5','4','5',',',',', 0 ,}, // ''
+			{ 0 , 34, 34,'7','6','7','.','.', 0 ,},	// "" 
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+		},
+		{	// Bボタン	
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 ,' ',' ','9','8','9',' ',' ', 0 ,},
+			{ 0 ,'<','<','B','A','B','>','>', 0 ,},
+			{ 0 ,'+','+','D','C','D','-','-', 0 ,},
+			{ 0 , 92, 92,'F','E','F','/','/', 0 ,}, // '\''
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+		},
+	},
+	{	// シフトあり
+		{	// Aボタン
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 ,'@','@','b','a','c','`','`', 0 ,},
+			{ 0 ,'{','{','e','d','f','}','}', 0 ,},
+			{ 0 ,'^','^','h','g','i',';',';', 0 ,},
+			{ 0 ,'~','~','k','j','l',':',':', 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+		},
+		{	// Bボタン
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 ,'p','p','n','m','o','q','q', 0 ,},
+			{ 0 ,'[','[','s','r','t',']',']', 0 ,},
+			{ 0 ,'*','*','v','u','w','=','=', 0 ,},
+			{ 0 ,'|','|','y','x','z','_','_', 0 ,},	// '\'
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+			{ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,},
+		},
+	},
+},
+
 };
 
 ////////////////////////////////
@@ -204,6 +277,17 @@ int gbainputInit(){
 
 void gbainputFinish(){
 	free(d);
+}
+
+//------------------------------
+// is関連
+//------------------------------
+inline int gbainputIsChanged(){
+	return d->is_change;
+}
+
+inline int gbainputIsEnter(){
+	return d->is_enter;
 }
 
 //------------------------------
@@ -237,6 +321,8 @@ static void keytomem(){
 	d->k.rrse_l = d->k2 & 0x0200;
 	d->k.hold_r_and_l = (d->k0 & 0x0300) == 0x0300;
 	d->k.hold_r_orr_l = (d->k0 & 0x0300);
+	// START追加
+	d->k.hold_start   = d->k0 & 0x08;
 }
 
 static void UpdateModeKey(){
@@ -264,6 +350,15 @@ static void chartobuf(char c){
 	d->linebuf[d->linebuf_p] = 0;
 }
 
+static void initStatus(){
+	d->is_change	= 0;
+	d->is_enter		= 0;
+}
+
+inline static int isTokeiMawari(void){
+	return d->select == SELECT_SYMBOL;
+}
+
 //------------------------------
 // 十字キー ホールド
 //------------------------------
@@ -274,10 +369,10 @@ static void mode0(){
 		d->mode = 1; return;
 	}
 
-	switch(d->k.hold_r_orr_l){
-		case 0x100: d->mode = 0x30; return;
+	switch(d->k.hold_l){
+		//case 0x100: d->mode = 0x30; return;
 		case 0x200: d->mode = 0x40; return;
-		case 0x300: d->mode = 0x50; return;
+		//case 0x300: d->mode = 0x50; return;
 		default: break;
 	}
 
@@ -285,6 +380,10 @@ static void mode0(){
 		case 0x1: d->mode = 0x10; return;
 		case 0x2: d->mode = 0x20; return;
 		default: break;
+	}
+
+	if(d->k.hold_start){
+		d->mode = 0x60; return;
 	}
 }
 
@@ -330,10 +429,10 @@ static void mode2(){
 	// メイン
 	if(d->k.push_a || d->k.push_b){ // if(d->k.rrse_I || d->k.push_X){ // <- クロス打ちの場合
 		d->J2 = direction8_tbl2[d->J][dpadToDigit_tbl[d->k.hold_j]];
-		d->IX = (d->k.push_X) ? 1 :
-								0 ;
-		d->R_SHIFT = (d->k.hold_r) ? 1 :
-									 0 ;
+		d->IX		= (d->k.push_X) ?	1 :
+										0 ;
+		d->R_SHIFT	= (d->k.hold_r) ?	1 :
+										0 ;
 		command();
 		d->X_done = d->IX;
 		d->mode = 15;
@@ -341,9 +440,11 @@ static void mode2(){
 }
 
 static void command(){ // 文字挿入！
-	char c = ascii_tbl[d->R_SHIFT][d->AB][d->J][d->J2];
+	char c = ascii_tbl[d->select][d->R_SHIFT][d->AB][d->J][d->J2];
 	if(c){
 		chartobuf(c);
+		// 変更フラグON
+		d->is_change = 1;
 	}
 }
 
@@ -374,6 +475,8 @@ static void mode10(){
 static void command1X(){
 	if(d->k1 & 0x10){ // →
 		chartobuf(' ');
+		// 変更フラグON
+		d->is_change = 1;
 	}
 	if(d->k1 & 0x20){ // ←
 		// backspace
@@ -382,9 +485,13 @@ static void command1X(){
 		}
 		d->linebuf_p--;
 		d->linebuf[d->linebuf_p] = 0;
+		// 変更フラグON
+		d->is_change = 1;
 	}
 	if(d->k1 & 0x80){ // ↓
 		chartobuf('\n');
+		// 確定フラグON
+		d->is_enter = 1;
 	}
 }
 
@@ -498,6 +605,38 @@ static void mode5X_stopper(){
 }
 
 //------------------------------
+// START ボタン ホールド
+//------------------------------
+static void mode60(){
+	// チェック
+	if(!d->k.hold_start){
+		d->mode = 0;
+		return;
+	}
+
+	// select
+	switch(d->k.hold_j){
+		case 0x1: d->select = SELECT_ALPH;		break;
+		case 0x2: d->select = SELECT_SYMBOL;	break;
+		default: break;
+	}
+}
+/******************
+static void mode51(){
+
+}
+
+static void command5X(){
+
+}
+*********************/
+
+static void mode6X_stopper(){
+	if(1){
+		d->mode = 0x60;
+	}
+}
+//------------------------------
 // メイン関数
 //------------------------------
 static void debugprint(){
@@ -511,6 +650,7 @@ static void debugprint(){
 
 char* gbainputMain(char* c){
 	btnUpdate();
+	initStatus();
 	keytomem();
 
 	// ホーム
@@ -533,6 +673,10 @@ char* gbainputMain(char* c){
 		if(d->mode == 0x4f) mode4X_stopper();
 	if(d->mode == 0x50) mode50();
 		if(d->mode == 0x5f) mode5X_stopper();
+
+	// START
+	if(d->mode == 0x60) mode60();
+		if(d->mode == 0x6f) mode6X_stopper();
 	
 	#ifdef    DEBUG
 	debugprint();

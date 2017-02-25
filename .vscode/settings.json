@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*h*c*c*h*harray": "cpp",
+        "array": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp"
+    }
+}

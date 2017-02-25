@@ -41,6 +41,7 @@ struct DATA {
 	int mode;
 	char c[256];
 	struct asmarray asmdata;
+	int (*next)(void);
 };
 
 ////////////////////////////////
@@ -74,6 +75,25 @@ static void go(int (*func)(void)){
 	videoInit(BG0_MAP_ADR);
 }
 
+char* Reverse(char* src){
+	static char dst[256];	// 逆にした文字を入れる配列
+	int len	= 0;
+	int i;				// 文字の長さ
+	
+	for(i = 0; *(src + i) != '\0'; i++){
+		len = i;
+	}
+
+	int j = len;
+	for(i = 0; i < len; i++){
+		dst[i] = *(src + j);
+		j--;
+	}
+
+	dst[len] = '\0';
+	return dst;
+}
+
 int main()
 {
 	// 初期化
@@ -89,6 +109,8 @@ int main()
 	d->mode = 1;
 	sprintf(d->c, "d->c_MOJI.");
 
+
+
 	while(d->mode)
 	{
 		scanKeys();
@@ -96,14 +118,9 @@ int main()
         d->k[1] = keysDown();
         d->k[2] = keysUp();
         switch(d->k[1]){
-			case 0x01:
-				go(main_Console);
-				break;
-			case 0x02:
-				go(main_MemoryViewer);
-				break;
-			default:
-				break;
+			case 0x01: go(main_Console);		break;
+			case 0x02: go(main_MemoryViewer);	break;
+			default:   d->next = NULL;			break;
         }
 
 		move(0,0);
@@ -112,6 +129,9 @@ int main()
 		gbaprintval((unsigned int)d);
 		move(0,2);
 		gbaprintval(keysHeld());
+		move(0,3);
+		gbaprint(Reverse("abcde"));
+
 		
 		VBlankIntrWait();
 		refresh();
@@ -122,3 +142,4 @@ int main()
 	SoftReset(RAM_RESTART);
 	return 0;
 }
+

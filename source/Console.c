@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <gba.h>
 #include <mcn2asm.h>
 #include <gbaprint.h>
@@ -33,7 +35,7 @@ struct DATA {
     unsigned int k[3];
 	int n;
 	int mode;
-	char c[256];
+	char line[256];
 	struct asmarray asmdata;
     char str[1024];
 };
@@ -46,9 +48,27 @@ static struct DATA* d;
 ////////////////////////////////
 // 定義_データ
 ////////////////////////////////
-
-
-
+/*
+void Command(char c){
+	switch (c){
+		case ' ':		break;
+		case '!':		break;
+		case '\"':		break;
+		case '#':		break;
+		case '$':		break;
+		case '%':		break;
+		case '&':		break;
+		case '\'':		break;
+		default:		break;
+	}
+}
+*/
+enum {
+	COMMAND_NONE = 0,
+	COMMAND_CALL = 1,
+	COMMAND_PEEK = 2,
+	COMMAND_POKE = 3,
+};
 
 ////////////////////////////////
 // メイン
@@ -65,6 +85,26 @@ static void vramInit(){
 	CpuFastSet(FONT(Tiles),	(u16*)ALL_CHR_ADR, (FONT(TilesLen)/4) | COPY32);
 }
 
+static unsigned int StrToInt(unsigned int* num,char* hex){ // command内で使う
+	// 16進数以外の文字があったらreturn
+	for(int i = 0; i < 8; i++){
+		if(!isxdigit(*(hex+i))){
+			return 0;
+		}
+	}
+	//strncpy(buf, hex, 8);
+	num* = strtol(hex, hex + 8, 16);
+	return 1;
+}
+
+static void command(char* line){
+	if(line[0] != '@') return;
+	
+	unsigned int addr;
+	StrToInt(&addr, &line[1]);
+	gbaprintval(*(int *)(addr));
+}
+
 int main_Console()
 {
     vramInit();
@@ -74,7 +114,22 @@ int main_Console()
 	d = (struct DATA*)malloc(sizeof(struct DATA));
 	d->n = 0;
 	d->mode = 1;
-	sprintf(d->c, "d->c_MOJI.");
+	strcpy(d->line, "");
+
+	move(0,0);
+	gbaprintraw(d->n);
+	move(0,1);
+	gbaprint("[console.c]\n");
+	move(0,2);
+	gbaprintval(d->n);
+	move(0,3);
+	gbaprint(d->line);
+	move(0,4);
+	gbaprintval((unsigned int)d);
+
+	int change_count = 0;
+	int enter_count = 0;
+	char moji[256];
 
 	while(d->mode)
 	{
@@ -85,24 +140,27 @@ int main_Console()
         if(d->k[1] & 0x4){
             d->mode = 0;
         }
-		
-		d->n += 0x0020;
-		if(d->n > 0xFFFF) d->n &= 0xFFFF;
-		gbainputMain(d->c);
+
+		gbainputMain(d->line);
+
+		if(gbainputIsChanged()){
+			change_count++;
+		}
+		if(gbainputIsEnter()){
+			enter_count++;
+			strcpy(moji,"");
+			command(d->line);
+		}
+		sprintf(moji,
+			"change : %d\n"
+			"enter  : %d\n"
+			"S2Hex  : %d\n"
+			, change_count, enter_count, StrToInt(d->line));
+		move(0,0);
+		gbaprint(moji);
+		gbaprint(d->line);
 		McnToAsm(&(d->asmdata), d->n);
 		
-		move(0,0);
-		gbaprintraw(d->n);
-		move(0,1);
-		gbaprint("[console.c]\n");
-		move(0,2);
-		gbaprintval(d->n);
-		move(0,3);
-		gbaprint(d->asmdata.name);
-		move(0,4);
-		gbaprint(d->c);
-        move(0,5);
-        gbaprintval((unsigned int)d);
 		
 		VBlankIntrWait();
 		refresh();
