@@ -30,7 +30,6 @@ void VisualStudioCode_syntaxHighlightBug_of_AfterMacro3(){}
 // 宣言_構造体
 ////////////////////////////////
 struct DATA {
-    unsigned int k[3];
 	int n;
 	int mode;
 	char c[256];
@@ -76,11 +75,7 @@ int main_MemoryViewer()
 	while(d->mode)
 	{
 		scanKeys();
-        d->k[0] = keysHeld();
-        d->k[1] = keysDown();
-        d->k[2] = keysUp();
-
-        if(d->k[1] & 0x4){
+        if(keysDown() & 0x4){
             d->mode = 0;
         }
 		

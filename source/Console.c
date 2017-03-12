@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <gba.h>
+
 #include <mcn2asm.h>
 #include <gbaprint.h>
 #include <gbainput.h>
@@ -85,15 +86,17 @@ static void vramInit(){
 	CpuFastSet(FONT(Tiles),	(u16*)ALL_CHR_ADR, (FONT(TilesLen)/4) | COPY32);
 }
 
-static unsigned int StrToInt(unsigned int* num,char* hex){ // command内で使う
+static unsigned int StrToInt(unsigned int* num, char* hex){ // command内で使う
 	// 16進数以外の文字があったらreturn
 	for(int i = 0; i < 8; i++){
 		if(!isxdigit(*(hex+i))){
 			return 0;
 		}
 	}
-	//strncpy(buf, hex, 8);
-	num* = strtol(hex, hex + 8, 16);
+
+	char buf[9];
+	strncpy(buf, hex, 8);
+	*num = strtol(buf, NULL, 16);
 	return 1;
 }
 
@@ -129,6 +132,7 @@ int main_Console()
 
 	int change_count = 0;
 	int enter_count = 0;
+	unsigned int strtoint_num = 0;
 	char moji[256];
 
 	while(d->mode)
@@ -145,6 +149,7 @@ int main_Console()
 
 		if(gbainputIsChanged()){
 			change_count++;
+			StrToInt(&strtoint_num ,d->line);
 		}
 		if(gbainputIsEnter()){
 			enter_count++;
@@ -155,12 +160,11 @@ int main_Console()
 			"change : %d\n"
 			"enter  : %d\n"
 			"S2Hex  : %d\n"
-			, change_count, enter_count, StrToInt(d->line));
+			, change_count, enter_count, strtoint_num);
 		move(0,0);
 		gbaprint(moji);
 		gbaprint(d->line);
 		McnToAsm(&(d->asmdata), d->n);
-		
 		
 		VBlankIntrWait();
 		refresh();
