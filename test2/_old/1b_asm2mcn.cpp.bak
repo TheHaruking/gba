@@ -1,0 +1,102 @@
+#include <stdint.h>
+#include <stdio.h>
+
+#define typedef_mcn_struct typedef struct { union { uint16_t mcn; struct 
+#define format_n(n) }; } format_##n;
+
+// no use macro : example
+typedef struct { union { uint16_t mcn; struct {
+	uint16_t Rd:3, Rs:3, Offset5:5, Op:2, _head:3;
+}; }; } format_1;
+// use macro!
+typedef_mcn_struct { uint16_t Rd:3, Rs:3, Rn:3, Op:1, l:1, _head:5; };		format_n(2);
+typedef_mcn_struct { uint16_t Offset8:8, Rd:3, Op:2, _head:3; };			format_n(3);
+typedef_mcn_struct { uint16_t Rd:3, Rs:3, Op:4, _head:6; };					format_n(4);
+typedef_mcn_struct { uint16_t Rd:3, Rs:3, H2:1, H1:1, Op:2, _head:6; };		format_n(5);
+typedef_mcn_struct { uint16_t Word8:8, Rd:3, _head:5; };					format_n(6);
+typedef_mcn_struct { uint16_t Rd:3, Rb:3, Ro:3, _0:1, B:1, L:1, _head:4; };	format_n(7);
+typedef_mcn_struct { uint16_t Rd:3, Rb:3, Ro:3, _1:1, S:1, H:1, _head:4; };	format_n(8);
+typedef_mcn_struct { uint16_t Rd:3, Rb:3, Offset5:5, L:1, B:1, _head:3; };	format_n(9);
+typedef_mcn_struct { uint16_t Rd:3, Rb:3, Offset5:5, L:1, _head:4; };		format_n(10);
+typedef_mcn_struct { uint16_t Word8:8, Rd:3, L:1, _head:4; };				format_n(11);
+typedef_mcn_struct { uint16_t Word8:8, Rd:3, SP:1, _head:4;  };				format_n(12);
+typedef_mcn_struct { uint16_t SWord7:7, S:1, _head:8; };					format_n(13);
+typedef_mcn_struct { uint16_t Rlist:8, R:1, _10:2, L:1, _head:4; };			format_n(14);
+typedef_mcn_struct { uint16_t Rlist:8, Rb:3, L:1, _head:4; };				format_n(15);
+typedef_mcn_struct { uint16_t Soffset8:8, Cond:4, _head:4; };				format_n(16);
+typedef_mcn_struct { uint16_t Value8:8, _head:8; };							format_n(17);
+typedef_mcn_struct { uint16_t Offset11:11, _head:5; };						format_n(18);
+typedef_mcn_struct { uint16_t Offset:11, H:1, _head:4; };					format_n(19);
+typedef_mcn_struct { uint16_t _head:16; };									format_n(0);
+
+
+/*
+typedef_mcn_struct { uint16_t  }; format_n();
+*/
+
+const uint32_t HEAD_DATA[20] = {
+	0b0,		0b000,		0b00011,	0b001,
+	0b010000,	0b000001,	0b01001,	0b0101,
+	0b0101,		0b011,		0b1000,		0b1001,
+	0b1010,		0b10110000,	0b1011,		0b1100,
+	0b1101,		0b11011111,	0b11100,	0b1111,
+};
+
+const uint32_t OP_DATA[20] = {
+	0, 4, 5, 3,
+	3, 5, 2, 5,
+	5, 5, 4, 3,
+	3, 2, 3, 3,
+	2, 1, 1, 2,
+};
+
+void asm2mcn(uint16_t* dst, int32_t* src){
+	switch(src[0])
+	{
+		case 1: {
+			format_1* _dst = (format_1*)dst;
+			_dst->_head = HEAD_DATA[src[0]];
+			_dst->Op = src[1];
+			_dst->Offset5 = src[2];
+			_dst->Rs = src[3];
+			_dst->Rd = src[4];
+			break;
+		}
+		case 6: {
+			format_6* _dst = (format_6*)dst;
+			_dst->_head = HEAD_DATA[src[0]];
+			_dst->Rd = src[1];
+			_dst->Word8 = src[2];
+			break;
+		}
+		case 19: {
+			format_19* _dst = (format_19*)dst;
+			_dst->_head = HEAD_DATA[src[0]];
+			_dst->H = src[1];
+			_dst->Offset = src[2];
+			break;
+		}
+		default: {
+			break;
+		}
+	}
+}
+
+int main(){
+	uint16_t	_bin;
+	int32_t		src[8];
+	
+	while(1)
+	{
+		printf("___input___\n");
+		printf("op : ");
+		scanf("%d", &src[0]);
+		for (int i = 1; i < OP_DATA[src[0]]+1; i++) {
+			printf("%d? : ", i); scanf("%d", &src[i]);
+		}
+
+		_bin = 0x0000;
+		asm2mcn(&_bin, src);
+		printf("mcn = %04X\n", _bin);
+	}
+}
